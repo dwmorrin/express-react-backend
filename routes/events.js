@@ -1,7 +1,7 @@
 var express = require('express');
 var router = express.Router();
 
-/* GET users listing. */
+/* GET events listing. */
 router.get('/', function(req, res, next) {
   var mysql = require('mysql');
   var connection = mysql.createConnection({
