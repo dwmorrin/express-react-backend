@@ -12,7 +12,7 @@ router.get('/', function(req, res, next) {
   })
 
   connection.connect();
-  connection.query(process.env.REACT_APP_DATA_QUERY_EVENTS, function (err, rows, fields) {
+  connection.query(process.env.REACT_APP_DATA_QUERY_LOCATIONS, function (err, rows, fields) {
     if (err) res.json(err)
     res.json(rows);
   })
