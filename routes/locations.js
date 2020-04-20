@@ -2,7 +2,7 @@ var express = require('express');
 var router = express.Router();
 
 /* GET events listing. */
-router.get('/', function(req, res, next) {
+router.get('/', function(req, res) {
   var mysql = require('mysql');
   var connection = mysql.createConnection({
     host: process.env.REACT_APP_DATA_HOST,
@@ -12,7 +12,7 @@ router.get('/', function(req, res, next) {
   })
 
   connection.connect();
-  connection.query(process.env.REACT_APP_DATA_QUERY_LOCATIONS, function (err, rows, fields) {
+  connection.query(process.env.REACT_APP_DATA_QUERY_LOCATIONS, function (err, rows) {
     if (err) res.json(err)
     res.json(rows);
   })
