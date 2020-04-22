@@ -32,20 +32,23 @@ app.post("/api/:data", (req, res) => {
   if (req.params.data === "login") {
     const { username, password } = req.body;
     const key = "REACT_APP_DATA_POST_LOGIN";
-    const query = injectPostQuery(process.env[key], username, password);
-    createConnection().query(query, (err, rows) => {
-      if (err) {
-        res.json(err);
-        return;
+    createConnection().query(
+      process.env[key],
+      [username, password],
+      (err, rows) => {
+        if (err) {
+          res.json(err);
+          return;
+        }
+        const mockUUID = Math.random().toString().slice(2);
+        res.cookie("id", mockUUID, {
+          maxAge: 1000 * 60 * 15,
+          httpOnly: true,
+          signed: true,
+        });
+        res.json(rows);
       }
-      const mockUUID = Math.random().toString().slice(2);
-      res.cookie("id", mockUUID, {
-        maxAge: 1000 * 60 * 15,
-        httpOnly: true,
-        signed: true,
-      });
-      res.json(rows);
-    });
+    );
   }
 });
 
@@ -64,19 +67,5 @@ app.use((err, req, res) => {
   res.status(err.status || 500);
   res.render("error");
 });
-
-/**
- * Replaces word in placeholder {{word}} with vars.
- * Just replaced sequentially.  Text of `word` doesn't matter.
- * @param {string} query
- * @param  {...string} vars
- */
-function injectPostQuery(query, ...vars) {
-  const regex = /{{(\w+?)}}/;
-  for (let x of vars) {
-    query = query.replace(regex, x);
-  }
-  return query;
-}
 
 module.exports = app;

@@ -14,7 +14,7 @@ REACT_APP_DATA_PASSWORD="mysqlpassword"
 REACT_APP_DATA_DATABASE="mysqldatabase"
 REACT_APP_DATA_GET_USERS="SELECT * FROM user"
 REACT_APP_DATA_GET_PROJECTS="SELECT * FROM project"
-REACT_APP_DATA_POST_LOGIN="SELECT id FROM user WHERE email = '{{username}}' AND password = '{{password}}'"
+REACT_APP_DATA_POST_LOGIN="SELECT id FROM user WHERE email = ? AND password = ?"
 REACT_APP_COOKIE_SECRET="FDHSJDF..."
 ```
 
@@ -22,9 +22,7 @@ The regular expression is `REACT_APP_DATA_(GET|POST)_\w+`.
 
 A `GET` request `/api/word` will lookup the value with `REACT_APP_DATA_GET_WORD` in your `.env` file.
 
-A `POST` request `/api/word` uses simple replacements to inject client supplied
-values into a query from `REACT_APP_DATA_POST_WORD` using placeholders in the
-`{{placeholder}}` style.
+[Use `?` for user provided data.](https://github.com/mysqljs/mysql#escaping-query-values)
 
 Run with `npm run start:backend`. This will server from port 3001.
 It's expected that your CRA is on port 3000 and you have
