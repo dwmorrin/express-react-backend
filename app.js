@@ -1,28 +1,52 @@
-require('dotenv').config();
-const createError = require('http-errors');
-const express = require('express');
-const cookieParser = require('cookie-parser');
-const logger = require('morgan');
+require("dotenv").config();
+const createError = require("http-errors");
+const express = require("express");
+const cookieParser = require("cookie-parser");
+const logger = require("morgan");
 const app = express();
 
-app.use(logger('dev'));
+app.use(logger("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
+app.use(cookieParser(process.env.REACT_APP_COOKIE_SECRET));
 
-app.get('/api/:data', (req, res) => {
-  const query = `REACT_APP_DATA_GET_${req.params.data.toUpperCase()}`;
-  const mysql = require('mysql');
-  const connection = mysql.createConnection({
+const createConnection = () => {
+  return require("mysql").createConnection({
     host: process.env.REACT_APP_DATA_HOST,
     user: process.env.REACT_APP_DATA_USER,
     password: process.env.REACT_APP_DATA_PASSWORD,
-    database: process.env.REACT_APP_DATA_DATABASE
-  })
-  connection.query(process.env[query], (err, rows) => {
+    database: process.env.REACT_APP_DATA_DATABASE,
+  });
+};
+
+app.get("/api/:data", (req, res) => {
+  const query = `REACT_APP_DATA_GET_${req.params.data.toUpperCase()}`;
+  createConnection().query(process.env[query], (err, rows) => {
     if (err) res.json(err);
     res.json(rows);
-  })
+  });
+});
+
+app.post("/api/:data", (req, res) => {
+  console.log("cookies", req.cookies);
+  if (req.params.data === "login") {
+    const { username, password } = req.body;
+    const key = "REACT_APP_DATA_POST_LOGIN";
+    const query = injectPostQuery(process.env[key], username, password);
+    createConnection().query(query, (err, rows) => {
+      if (err) {
+        res.json(err);
+        return;
+      }
+      const mockUUID = Math.random().toString().slice(2);
+      res.cookie("id", mockUUID, {
+        maxAge: 1000 * 60 * 15,
+        httpOnly: true,
+        signed: true,
+      });
+      res.json(rows);
+    });
+  }
 });
 
 // catch 404 and forward to error handler
@@ -34,11 +58,25 @@ app.use((_, __, next) => {
 app.use((err, req, res) => {
   // set locals, only providing error in development
   res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+  res.locals.error = req.app.get("env") === "development" ? err : {};
 
   // render the error page
   res.status(err.status || 500);
-  res.render('error');
+  res.render("error");
 });
+
+/**
+ * Replaces word in placeholder {{word}} with vars.
+ * Just replaced sequentially.  Text of `word` doesn't matter.
+ * @param {string} query
+ * @param  {...string} vars
+ */
+function injectPostQuery(query, ...vars) {
+  const regex = /{{(\w+?)}}/;
+  for (let x of vars) {
+    query = query.replace(regex, x);
+  }
+  return query;
+}
 
 module.exports = app;
