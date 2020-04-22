@@ -10,8 +10,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-app.get('/:data', (req, res) => {
-  const query = `REACT_APP_DATA_QUERY_${req.params.data.toUpperCase()}`;
+app.get('/api/:data', (req, res) => {
+  const query = `REACT_APP_DATA_GET_${req.params.data.toUpperCase()}`;
   const mysql = require('mysql');
   const connection = mysql.createConnection({
     host: process.env.REACT_APP_DATA_HOST,
