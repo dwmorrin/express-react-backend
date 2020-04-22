@@ -1,34 +1,37 @@
 require('dotenv').config();
-var createError = require('http-errors');
-var express = require('express');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
-
-var eventsRouter = require('./routes/events');
-var locationsRouter = require('./routes/locations');
-var projectsRouter = require('./routes/projects');
-var usersRouter = require('./routes/users');
-
-var app = express();
-
+const createError = require('http-errors');
+const express = require('express');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
+const app = express();
 
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-app.use('/events', eventsRouter);
-app.use('/locations', locationsRouter);
-app.use('/projects', projectsRouter);
-app.use('/users', usersRouter);
+app.get('/:data', (req, res) => {
+  const query = `REACT_APP_DATA_QUERY_${req.params.data.toUpperCase()}`;
+  const mysql = require('mysql');
+  const connection = mysql.createConnection({
+    host: process.env.REACT_APP_DATA_HOST,
+    user: process.env.REACT_APP_DATA_USER,
+    password: process.env.REACT_APP_DATA_PASSWORD,
+    database: process.env.REACT_APP_DATA_DATABASE
+  })
+  connection.query(process.env[query], (err, rows) => {
+    if (err) res.json(err);
+    res.json(rows);
+  })
+});
 
 // catch 404 and forward to error handler
-app.use(function(req, res, next) {
+app.use((_, __, next) => {
   next(createError(404));
 });
 
 // error handler
-app.use(function(err, req, res, next) {
+app.use((err, req, res) => {
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
