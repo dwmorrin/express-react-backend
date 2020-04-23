@@ -19,9 +19,10 @@ const createConnection = () => {
   });
 };
 
-app.get("/api/:data", (req, res) => {
+app.get("/api/:data/:id?", (req, res) => {
   const query = `REACT_APP_DATA_GET_${req.params.data.toUpperCase()}`;
-  createConnection().query(process.env[query], (err, rows) => {
+  const id = req.params.id ? [req.params.id] : [];
+  createConnection().query(process.env[query], id, (err, rows) => {
     if (err) res.json(err);
     res.json(rows);
   });
