@@ -1,4 +1,7 @@
-require("dotenv").config();
+const dotenv = require("dotenv");
+const dotenvExpand = require("dotenv-expand");
+dotenvExpand(dotenv.config());
+
 const createError = require("http-errors");
 const express = require("express");
 const cookieParser = require("cookie-parser");
@@ -20,7 +23,9 @@ const createConnection = () => {
 };
 
 app.get("/api/:data/:id?", (req, res) => {
-  const query = `REACT_APP_DATA_GET_${req.params.data.toUpperCase()}`;
+  const query = `REACT_APP_DATA_GET_${req.params.data.toUpperCase()}${
+    req.params.id ? "_BY_ID" : ""
+  }`;
   const id = req.params.id ? [req.params.id] : [];
   createConnection().query(process.env[query], id, (err, rows) => {
     if (err) res.json(err);
@@ -29,7 +34,6 @@ app.get("/api/:data/:id?", (req, res) => {
 });
 
 app.post("/api/:data", (req, res) => {
-  console.log("cookies", req.cookies);
   if (req.params.data === "login") {
     const { username, password } = req.body;
     const key = "REACT_APP_DATA_POST_LOGIN";
@@ -47,7 +51,8 @@ app.post("/api/:data", (req, res) => {
           httpOnly: true,
           signed: true,
         });
-        res.json(rows);
+        const user = rows[0];
+        res.json(user);
       }
     );
   }
