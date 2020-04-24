@@ -2,16 +2,22 @@ const dotenv = require("dotenv");
 const dotenvExpand = require("dotenv-expand");
 dotenvExpand(dotenv.config());
 
-const createError = require("http-errors");
+// const createError = require("http-errors");
 const express = require("express");
-const cookieParser = require("cookie-parser");
+const session = require("express-session");
 const logger = require("morgan");
 const app = express();
 
 app.use(logger("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser(process.env.REACT_APP_COOKIE_SECRET));
+app.use(
+  session({
+    secret: process.env.REACT_APP_COOKIE_SECRET,
+    resave: false,
+    saveUninitialized: false,
+  })
+);
 
 const createConnection = () => {
   return require("mysql").createConnection({
@@ -21,17 +27,6 @@ const createConnection = () => {
     database: process.env.REACT_APP_DATA_DATABASE,
   });
 };
-
-app.get("/api/:data/:id?", (req, res) => {
-  const query = `REACT_APP_DATA_GET_${req.params.data.toUpperCase()}${
-    req.params.id ? "_BY_ID" : ""
-  }`;
-  const id = req.params.id ? [req.params.id] : [];
-  createConnection().query(process.env[query], id, (err, rows) => {
-    if (err) res.json(err);
-    res.json(rows);
-  });
-});
 
 app.post("/api/:data", (req, res) => {
   if (req.params.data === "login") {
@@ -45,33 +40,30 @@ app.post("/api/:data", (req, res) => {
           res.json(err);
           return;
         }
-        const mockUUID = Math.random().toString().slice(2);
-        res.cookie("id", mockUUID, {
-          maxAge: 1000 * 60 * 15,
-          httpOnly: true,
-          signed: true,
-        });
         const user = rows[0];
+        req.session.userId = user.id; /* auth for session */
         res.json(user);
       }
     );
   }
 });
 
-// catch 404 and forward to error handler
-app.use((_, __, next) => {
-  next(createError(404));
+app.get("/api/:data/:id?", (req, res) => {
+  if (!req.session.userId) {
+    res.json({ error: { message: "you are not logged in" } });
+    return;
+  }
+  const query = `REACT_APP_DATA_GET_${req.params.data.toUpperCase()}${
+    req.params.id ? "_BY_ID" : ""
+  }`;
+  const id = req.params.id ? [req.params.id] : [];
+  createConnection().query(process.env[query], id, (err, rows) => {
+    if (err) res.json(err);
+    res.json(rows);
+  });
 });
 
 // error handler
-app.use((err, req, res) => {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get("env") === "development" ? err : {};
-
-  // render the error page
-  res.status(err.status || 500);
-  res.render("error");
-});
+app.use(console.error);
 
 module.exports = app;
