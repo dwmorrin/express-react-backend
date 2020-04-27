@@ -31,6 +31,7 @@ const createConnection = () => {
 app.post("/api/:data", (req, res) => {
   if (req.params.data === "logout") {
     req.session.destroy();
+    res.clearCookie("connect.sid").send();
     return;
   }
   if (req.params.data === "login") {
@@ -68,6 +69,13 @@ app.get("/api/:data/:id?", (req, res) => {
 });
 
 // error handler
-app.use(console.error);
+// TODO currently just logging for development; make real handlers for production
+app.use((req) => {
+  if (!req.session) {
+    console.error("no session found. please log in.");
+    return;
+  }
+  console.error(`couldn't handle request for ${req.path}`);
+});
 
 module.exports = app;
