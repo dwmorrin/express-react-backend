@@ -29,6 +29,10 @@ const createConnection = () => {
 };
 
 app.post("/api/:data", (req, res) => {
+  if (req.params.data === "logout") {
+    req.session.destroy();
+    return;
+  }
   if (req.params.data === "login") {
     const { username, password } = req.body;
     const key = "REACT_APP_DATA_POST_LOGIN";
