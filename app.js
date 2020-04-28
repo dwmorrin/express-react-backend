@@ -31,51 +31,48 @@ const createConnection = () => {
 app.post("/api/:data", (req, res) => {
   if (req.params.data === "logout") {
     req.session.destroy();
-    res.clearCookie("connect.sid").send();
-    return;
+    return res.clearCookie("connect.sid").send();
   }
   if (req.params.data === "login") {
     const { username, password } = req.body;
     const key = "REACT_APP_DATA_POST_LOGIN";
-    createConnection().query(
-      process.env[key],
-      [username, password],
-      (err, rows) => {
-        if (err) {
-          res.json(err);
-          return;
-        }
-        const user = rows[0];
-        req.session.userId = user.id; /* auth for session */
-        res.json(user);
+    const connection = createConnection();
+    connection.query(process.env[key], [username, password], (err, rows) => {
+      if (err) {
+        res.json(err);
+        return;
       }
-    );
+      const user = rows[0];
+      req.session.userId = user.id; /* auth for session */
+      res.json(user);
+    });
+    connection.end();
   }
 });
 
 app.get("/api/:data/:id?", (req, res) => {
   if (!req.session.userId) {
-    res.json({ error: { message: "you are not logged in" } });
-    return;
+    return res.status(403).send("not logged in");
   }
   const query = `REACT_APP_DATA_GET_${req.params.data.toUpperCase()}${
     req.params.id ? "_BY_ID" : ""
   }`;
   const id = req.params.id ? [req.params.id] : [];
-  createConnection().query(process.env[query], id, (err, rows) => {
+  const connection = createConnection();
+  connection.query(process.env[query], id, (err, rows) => {
     if (err) res.json(err);
     res.json(rows);
   });
+  connection.end();
 });
 
 // error handler
 // TODO currently just logging for development; make real handlers for production
-app.use((req) => {
+app.use((req, res) => {
   if (!req.session) {
-    console.error("no session found. please log in.");
-    return;
+    return res.status(403).send("forbidden");
   }
-  console.error(`couldn't handle request for ${req.path}`);
+  return res.status(404).send("not found");
 });
 
 module.exports = app;
