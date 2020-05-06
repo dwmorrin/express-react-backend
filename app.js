@@ -28,6 +28,20 @@ const createConnection = () => {
   });
 };
 
+/**
+ * MySQL couldn't connect or had an error
+ * @param {Error} err
+ * @param {Response} res
+ */
+const handleMySQLError = (err, res) => {
+  res.status(500).json(
+    // ! note this assumes we are responding to a JSON fetch request
+    process.env.NODE_ENV === "development"
+      ? err
+      : { error: [{ message: "database unavailable" }] }
+  );
+};
+
 app.post("/api/:data", (req, res) => {
   if (req.params.data === "logout") {
     req.session.destroy();
@@ -39,10 +53,15 @@ app.post("/api/:data", (req, res) => {
     const connection = createConnection();
     connection.query(process.env[key], [username, password], (err, rows) => {
       if (err) {
-        res.json(err);
+        handleMySQLError(err, res);
         return;
       }
       const user = rows[0];
+      if (!user.id) {
+        // The credentials did not return a valid user
+        res.status(401).json({ error: [{ message: "invalid credentials" }] });
+        return;
+      }
       req.session.userId = user.id; /* auth for session */
       res.json(user);
     });
@@ -60,14 +79,17 @@ app.get("/api/:data/:id?", (req, res) => {
   const id = req.params.id ? [req.params.id] : [];
   const connection = createConnection();
   connection.query(process.env[query], id, (err, rows) => {
-    if (err) res.json(err);
-    res.json(rows);
+    if (err) {
+      handleMySQLError(err, res);
+    } else {
+      res.json(rows);
+    }
   });
   connection.end();
 });
 
 // error handler
-// TODO currently just logging for development; make real handlers for production
+// TODO make real handlers for production
 app.use((req, res) => {
   if (!req.session) {
     return res.status(403).send("forbidden");
