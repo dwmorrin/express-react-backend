@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start:backend:dev": "PORT=3001 NODE_ENV=development node ./bin/www",
+    "start:backend:dev": "PORT=3001 NODE_ENV=development nodemon ./bin/www",
     "start:backend:prod": "PORT=3001 NODE_ENV=production node ./bin/www"
   },
   "dependencies": {
@@ -15,5 +15,8 @@
     "http-errors": "^1.7.3",
     "morgan": "^1.10.0",
     "mysql": "^2.18.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.3"
   }
 }
